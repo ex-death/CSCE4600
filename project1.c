@@ -28,7 +28,8 @@ pthread_mutex_t mutex3;        // pthread mutex
 void * thread1(void *arg);
 void * thread2(void *arg);
 void * thread3(void *arg);
-void Link(struct Node* prev_node, int new_data);
+void Link(struct Node* prev_node, struct Node* linked_node);
+void Unlink(struct Node* head_ref, struct Node* unlinked_node); 
 
 
 int main() 
@@ -70,7 +71,7 @@ int main()
 
 void * thread1(void *arg)
 {
-	int *b;
+	struct Node *b = NULL;
     while (1)
     {
         pthread_cond_wait(&openFree, &mutex1);
@@ -78,7 +79,7 @@ void * thread1(void *arg)
 
         pthread_mutex_lock(&mutex1);
 
-        // b= unlink freelist
+        Unlink(freeList, b);
 
         pthread_mutex_unlock(&mutex1);
         
@@ -87,7 +88,7 @@ void * thread1(void *arg)
 
         pthread_mutex_lock(&mutex2); 
         
-				//Link(list1, b);
+				Link(list1, b);
 				
 				pthread_mutex_unlock(&mutex2); 
 				
@@ -101,27 +102,27 @@ void * thread1(void *arg)
 
 void * thread2(void *arg)
 {
-	int *x;
-	int *y;
+	struct Node* x = NULL;
+	struct Node* y = NULL;
      while (1)
     {
 				pthread_cond_wait(&filled1, &mutex2);
 				pthread_mutex_lock(&mutex2);
-				// x = unlink list 1
+				Unlink(list1, x);
 				pthread_mutex_unlock(&mutex2);
 				pthread_mutex_lock(&mutex1);
-				// y = unlink freelist
+				Unlink(freeList, y);
 				pthread_mutex_unlock(&mutex1);
 				
 				pthread_cond_signal(&openFree);
 				// x to produce in y
 				pthread_mutex_lock(&mutex1);
-				//Link(&freeList, y);
+				Link(freeList, y);
 				pthread_mutex_unlock(&mutex1);
 
 				pthread_cond_signal(&usedFree);
 				pthread_mutex_lock(&mutex3);
-				//Link(list2, y);
+				Link(list2, y);
 				pthread_mutex_unlock(&mutex3);
 
 				pthread_cond_signal(&filled2);
@@ -133,18 +134,18 @@ void * thread2(void *arg)
 
 void * thread3 (void *arg)
 {
-	int *c;
+	struct Node *c = NULL;
 
 	while(1)
 	{
 		pthread_cond_wait(&filled2, &mutex3);
 		pthread_mutex_lock(&mutex3);
-		//c = unlink list2
+		Unlink(list2, c);
 		pthread_mutex_unlock(&mutex3);
 		
 		//consume info c
 		pthread_mutex_lock(&mutex1);
-		//Link(freeList, c);
+		Link(freeList, c);
 		pthread_mutex_unlock(&mutex1);
 
 		pthread_cond_signal(&usedFree);
@@ -156,7 +157,7 @@ void * thread3 (void *arg)
 
 /* Given a node prev_node, insert a new node after the given
 prev_node */
-void Link(struct Node* prev_node, int new_data)
+void Link(struct Node* prev_node, struct Node* linked_node)
 {
     /*1. check if the given prev_node is NULL */
     if (prev_node == NULL) {
@@ -168,11 +169,32 @@ void Link(struct Node* prev_node, int new_data)
     struct Node* new_node = (struct Node*)malloc(sizeof(struct Node));
  
     /* 3. put in the data */
-    new_node->data = new_data;
- 
-    /* 4. Make next of new node as next of prev_node */
-    new_node->next = prev_node->next;
- 
+    new_node = linked_node;
+  
     /* 5. move the next of prev_node as new_node */
     prev_node->next = new_node;
 }
+
+void Unlink(struct Node* head_ref, struct Node* unlinked_node)
+{
+    // Store head node
+    struct Node *temp = head_ref, *prev;
+ 
+    // If head node itself holds the key to be deleted
+    if (temp->next == NULL) {
+        head_ref = temp->next; // Changed head
+        free(temp); // free old head
+				unlinked_node = head_ref;
+        return;
+    }
+ while (temp != NULL && temp->next != NULL) {
+        prev = temp;
+        temp = temp->next;
+    }
+ 
+    // Unlink the node from linked list
+    prev->next = temp->next;
+    free(temp); // Free memory
+
+		unlinked_node = prev; 
+} 
