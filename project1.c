@@ -84,7 +84,9 @@ void * thread1(void *arg)
         pthread_mutex_unlock(&mutex1);
         
         pthread_cond_signal(&openFree);
+        
 				// produce info in b        
+        b->data = b->data + 10;
 
         pthread_mutex_lock(&mutex2); 
         
@@ -116,6 +118,8 @@ void * thread2(void *arg)
 				
 				pthread_cond_signal(&openFree);
 				// x to produce in y
+        y->data = x->data * y->data;
+
 				pthread_mutex_lock(&mutex1);
 				Link(freeList, y);
 				pthread_mutex_unlock(&mutex1);
@@ -144,6 +148,8 @@ void * thread3 (void *arg)
 		pthread_mutex_unlock(&mutex3);
 		
 		//consume info c
+    c->data = 0;
+
 		pthread_mutex_lock(&mutex1);
 		Link(freeList, c);
 		pthread_mutex_unlock(&mutex1);
