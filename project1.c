@@ -2,27 +2,25 @@
 #include <stdlib.h>
 #include <pthread.h>
 
-struct Node{
+//list structure
+struct Node{  
 	int data;
 	struct Node* next;
 };
 
 // shared variables
-struct Node* freeList = NULL;
-struct Node* list1 = NULL;
-struct Node* list2 = NULL;
+struct Node* freeList = NULL; //freelist list
+struct Node* list1 = NULL;			//list1 list
+struct Node* list2 = NULL;			//list2 list
 
-pthread_cond_t openFree;        // shared buffer full
-pthread_cond_t usedFree;        // shared buffer empty
-pthread_cond_t filled1;        // shared buffer empty
-pthread_cond_t filled2;        // shared buffer empty
+pthread_cond_t openFree;       // openFree counting semaphore
+pthread_cond_t usedFree;       // usedFree counting semaphore
+pthread_cond_t filled1;        // filled1 counting semaphore
+pthread_cond_t filled2;        // filled2 counting semaphore
 
-pthread_mutex_t mutex1;        // pthread mutex
-pthread_mutex_t mutex2;        // pthread mutex
-pthread_mutex_t mutex3;        // pthread mutex
-
-//unsigned int prod_index = 0;     // producer index into shared buffer
-//unsigned int cons_index = 0;     // consumer index into shard buffer
+pthread_mutex_t mutex1;        // pthread mutex1
+pthread_mutex_t mutex2;        // pthread mutex2
+pthread_mutex_t mutex3;        // pthread mutex3
 
 // function prototypes
 void * thread1(void *arg);
@@ -40,10 +38,10 @@ int main()
     pthread_mutex_init(&mutex1, NULL);
     pthread_mutex_init(&mutex2, NULL);
     pthread_mutex_init(&mutex3, NULL);
-    pthread_cond_init(&openFree, NULL); // full shared buffer cond variable initialization
-    pthread_cond_init(&usedFree, NULL); // empty shared buffer cond variable initialization
-    pthread_cond_init(&filled1, NULL); // full shared buffer cond variable initialization
-    pthread_cond_init(&filled2, NULL); // empty shared buffer cond variable initialization
+    pthread_cond_init(&openFree, NULL); // openFree cond variable initialization
+    pthread_cond_init(&usedFree, NULL); // usedFree cond variable initialization
+    pthread_cond_init(&filled1, NULL); // filled1 cond variable initialization
+    pthread_cond_init(&filled2, NULL); // filled2 cond variable initialization
     
     // start threads
     pthread_create(&t1_tid, NULL, thread1, NULL);
@@ -74,27 +72,25 @@ void * thread1(void *arg)
 	struct Node *b = NULL;
     while (1)
     {
-        pthread_cond_wait(&openFree, &mutex1);
-				pthread_cond_wait(&usedFree, &mutex1);
+        pthread_cond_wait(&openFree, &mutex1); 	// decrement openFree and lock if no more free space in freeList
+				pthread_cond_wait(&usedFree, &mutex1); 	// if nothing is added onto freeList, wait
 
-        pthread_mutex_lock(&mutex1);
+        pthread_mutex_lock(&mutex1); 						// lock mutex 1 for unlink of freelist
 
         Unlink(freeList, b);
 
-        pthread_mutex_unlock(&mutex1);
+        pthread_mutex_unlock(&mutex1); 					// unlock mutex 1 for use of freelist
         
-        pthread_cond_signal(&openFree);
-        
+        pthread_cond_signal(&openFree); 					// increment count of freespace in freelist
 				// produce info in b        
-        b->data = b->data + 10;
 
-        pthread_mutex_lock(&mutex2); 
+        pthread_mutex_lock(&mutex2); 						// lock mutex 2 for link of list-1
         
 				Link(list1, b);
 				
-				pthread_mutex_unlock(&mutex2); 
+				pthread_mutex_unlock(&mutex2); 					// unlock mutex 2 for use of list-1
 				
-				pthread_cond_signal(&filled1);
+				pthread_cond_signal(&filled1); 					// increment filled-1 to allow for moving it to list with thread 2
 				
     }
 
@@ -108,28 +104,26 @@ void * thread2(void *arg)
 	struct Node* y = NULL;
      while (1)
     {
-				pthread_cond_wait(&filled1, &mutex2);
-				pthread_mutex_lock(&mutex2);
+				pthread_cond_wait(&filled1, &mutex2); // if thread 1 hasn’t added something to list-1, wait
+				pthread_mutex_lock(&mutex2); 					// lock mutex2 for unlink of list-1
 				Unlink(list1, x);
-				pthread_mutex_unlock(&mutex2);
-				pthread_mutex_lock(&mutex1);
+				pthread_mutex_unlock(&mutex2); 				// unlock mutex2 for use of list-1
+				pthread_mutex_lock(&mutex1); 					// lock for unlink of freelist 
 				Unlink(freeList, y);
-				pthread_mutex_unlock(&mutex1);
+				pthread_mutex_unlock(&mutex1); 				// lock for use of freelist
 				
-				pthread_cond_signal(&openFree);
+				pthread_cond_signal(&openFree); 				// add open space to freeList
 				// x to produce in y
-        y->data = x->data * y->data;
-
-				pthread_mutex_lock(&mutex1);
+				pthread_mutex_lock(&mutex1); 					// lock for link of freelist
 				Link(freeList, y);
-				pthread_mutex_unlock(&mutex1);
+				pthread_mutex_unlock(&mutex1); 				// unlock for use of freelist
 
-				pthread_cond_signal(&usedFree);
-				pthread_mutex_lock(&mutex3);
+				pthread_cond_signal(&usedFree); 				// add count to freelist
+				pthread_mutex_lock(&mutex3); 					// lock for link of list-2
 				Link(list2, y);
-				pthread_mutex_unlock(&mutex3);
+				pthread_mutex_unlock(&mutex3); 				// unlock for use of list-2
 
-				pthread_cond_signal(&filled2);
+				pthread_cond_signal(&filled2); 				// add to count of list-2
 
     }
 
@@ -142,21 +136,20 @@ void * thread3 (void *arg)
 
 	while(1)
 	{
-		pthread_cond_wait(&filled2, &mutex3);
-		pthread_mutex_lock(&mutex3);
+		pthread_cond_wait(&filled2, &mutex3); // if thread 2 hasn’t added something to list-2, wait
+		pthread_mutex_lock(&mutex3); 					// lock for unlink of list-2
 		Unlink(list2, c);
-		pthread_mutex_unlock(&mutex3);
+		pthread_mutex_unlock(&mutex3); 				// unlock for use of list-2
 		
 		//consume info c
-    c->data = 0;
-
-		pthread_mutex_lock(&mutex1);
+		pthread_mutex_lock(&mutex1); 					// lock for link of freelist
 		Link(freeList, c);
-		pthread_mutex_unlock(&mutex1);
+		pthread_mutex_unlock(&mutex1); 				// unlock for use of freelist
 
-		pthread_cond_signal(&usedFree);
+		pthread_cond_signal(&usedFree); 				// add count to freelist
 	}
 
+	return NULL;
 }
 
 
@@ -193,7 +186,7 @@ void Unlink(struct Node* head_ref, struct Node* unlinked_node)
 				unlinked_node = head_ref;
         return;
     }
- while (temp != NULL && temp->next != NULL) {
+ 		while (temp != NULL && temp->next != NULL) {
         prev = temp;
         temp = temp->next;
     }
