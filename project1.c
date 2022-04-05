@@ -2,11 +2,15 @@
 #include <stdlib.h>
 #include <pthread.h>
 
-#define NITEMS 10        // number of items in shared buffer
+struct Node{
+	int data;
+	struct Node* next;
+};
 
 // shared variables
-char shared_buffer[NITEMS];    // echo buffer
-int shared_count;        // item count
+struct Node* freeList = NULL;
+struct Node* list1 = NULL;
+struct Node* list2 = NULL;
 
 pthread_cond_t openFree;        // shared buffer full
 pthread_cond_t usedFree;        // shared buffer empty
@@ -17,13 +21,15 @@ pthread_mutex_t mutex1;        // pthread mutex
 pthread_mutex_t mutex2;        // pthread mutex
 pthread_mutex_t mutex3;        // pthread mutex
 
-unsigned int prod_index = 0;     // producer index into shared buffer
-unsigned int cons_index = 0;     // consumer index into shard buffer
+//unsigned int prod_index = 0;     // producer index into shared buffer
+//unsigned int cons_index = 0;     // consumer index into shard buffer
 
 // function prototypes
 void * thread1(void *arg);
 void * thread2(void *arg);
 void * thread3(void *arg);
+void Link(struct Node* prev_node, int new_data);
+
 
 int main() 
 { 
@@ -40,8 +46,8 @@ int main()
     
     // start threads
     pthread_create(&t1_tid, NULL, thread1, NULL);
-    pthread_create(&t2_tid1, NULL, thread2, NULL);
-    pthread_create(&t3_tid2, NULL, thread3, NULL);
+    pthread_create(&t2_tid, NULL, thread2, NULL);
+    pthread_create(&t3_tid, NULL, thread3, NULL);
     
     // wait for threads to finish
     pthread_join(t1_tid, NULL);
@@ -59,109 +65,67 @@ int main()
     
     return 0;
 }
-// producer thread executes this function
+
+
+
 void * thread1(void *arg)
 {
-    char key;
-
-    printf("Enter text for producer to read and consumer to print, use Ctrl-C to exit.\n\n");
-
-    // this loop has the producer read in from stdin and place on the shared buffer
+	int *b;
     while (1)
     {
-        // read input key
-        scanf("%c", &key);
+        pthread_cond_wait(&openFree, &mutex1);
+				pthread_cond_wait(&usedFree, &mutex1);
 
-        // acquire mutex lock
-        pthread_mutex_lock(&mutex);
+        pthread_mutex_lock(&mutex1);
 
-        // -- if statement to check if shared buffer is full
-        // -- if full, wait until signal from consumer thread
-        // -- if not full signal the consumer thread to wakeup then finish process
+        // b= unlink freelist
 
-        if (shared_count == NITEMS)
-        {
-            // sets thread to wait in while loop to prevent spurious wakeup
-            while(shared_count == NITEMS)
-                pthread_cond_wait(&sbfull, &mutex);
-            // release mutex lock
-            pthread_mutex_unlock(&mutex);
-        }
-        else
-        {
-            // signal to wakeup consumer thread
-            pthread_cond_signal(&sbnull);
-                
-            // store key in shared buffer
-            shared_buffer[prod_index] = key;
-
-            // update shared count variable
-            shared_count++;
-    
-            // update producer index
-            if (prod_index == NITEMS - 1)
-                prod_index = 0;
-            else
-                prod_index++;
+        pthread_mutex_unlock(&mutex1);
         
-            // release mutex lock
-            pthread_mutex_unlock(&mutex); 
-        }
+        pthread_cond_signal(&openFree);
+				// produce info in b        
+
+        pthread_mutex_lock(&mutex2); 
+        
+				//Link(list1, b);
+				
+				pthread_mutex_unlock(&mutex2); 
+				
+				pthread_cond_signal(&filled1);
+				
     }
 
     return NULL;
 }
-// consumer thread executes this function
+
+
 void * thread2(void *arg)
 {
-    char key;
-
-    long unsigned int id = (long unsigned int)pthread_self();
-
-    // this loop has the consumer gets from the shared buffer and prints to stdout
-    while (1)
+	int *x;
+	int *y;
+     while (1)
     {
+				pthread_cond_wait(&filled1, &mutex2);
+				pthread_mutex_lock(&mutex2);
+				// x = unlink list 1
+				pthread_mutex_unlock(&mutex2);
+				pthread_mutex_lock(&mutex1);
+				// y = unlink freelist
+				pthread_mutex_unlock(&mutex1);
+				
+				pthread_cond_signal(&openFree);
+				// x to produce in y
+				pthread_mutex_lock(&mutex1);
+				//Link(&freeList, y);
+				pthread_mutex_unlock(&mutex1);
 
+				pthread_cond_signal(&usedFree);
+				pthread_mutex_lock(&mutex3);
+				//Link(list2, y);
+				pthread_mutex_unlock(&mutex3);
 
-        // acquire mutex lock
-        pthread_mutex_lock(&mutex);
-        
-        // -- if statement to check if shared buffer is empty
-        // -- if empty, wait until signal from producer thread
-        // -- if not empty signal the producer thread to wakeup then finish process
+				pthread_cond_signal(&filled2);
 
-
-        if (shared_count == 0)
-        {    
-            // sets thread to wait in while loop to prevent spurious wakeup
-            while(shared_count == 0)
-                pthread_cond_wait(&sbnull, &mutex);
-            // release mutex lock
-            pthread_mutex_unlock(&mutex);
-        }
-        else
-        {
-            // signal to wakeup producer thread
-            pthread_cond_signal(&sbfull);
-
-            // read key from shared buffer
-            key = shared_buffer[cons_index];
-        
-            // echo key
-            printf("consumer %lu: %c\n", (long unsigned int) id, key);
-
-            // update shared count variable
-            shared_count--;
-
-            // update consumer index
-            if (cons_index == NITEMS - 1)
-                cons_index = 0;
-            else
-                cons_index++;
-    
-            // release mutex lock
-            pthread_mutex_unlock(&mutex);
-        }
     }
 
     return NULL;
@@ -169,5 +133,46 @@ void * thread2(void *arg)
 
 void * thread3 (void *arg)
 {
+	int *c;
 
+	while(1)
+	{
+		pthread_cond_wait(&filled2, &mutex3);
+		pthread_mutex_lock(&mutex3);
+		//c = unlink list2
+		pthread_mutex_unlock(&mutex3);
+		
+		//consume info c
+		pthread_mutex_lock(&mutex1);
+		//Link(freeList, c);
+		pthread_mutex_unlock(&mutex1);
+
+		pthread_cond_signal(&usedFree);
+	}
+
+}
+
+
+
+/* Given a node prev_node, insert a new node after the given
+prev_node */
+void Link(struct Node* prev_node, int new_data)
+{
+    /*1. check if the given prev_node is NULL */
+    if (prev_node == NULL) {
+        printf("the given previous node cannot be NULL");
+        return;
+    }
+ 
+    /* 2. allocate new node */
+    struct Node* new_node = (struct Node*)malloc(sizeof(struct Node));
+ 
+    /* 3. put in the data */
+    new_node->data = new_data;
+ 
+    /* 4. Make next of new node as next of prev_node */
+    new_node->next = prev_node->next;
+ 
+    /* 5. move the next of prev_node as new_node */
+    prev_node->next = new_node;
 }
