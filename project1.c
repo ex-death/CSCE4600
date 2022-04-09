@@ -82,7 +82,8 @@ void * thread1(void *arg)
         pthread_mutex_unlock(&mutex1); 					// unlock mutex 1 for use of freelist
         
         pthread_cond_signal(&openFree); 					// increment count of freespace in freelist
-				// produce info in b        
+				// produce info in b       
+        b->data = b->data +10; 
 
         pthread_mutex_lock(&mutex2); 						// lock mutex 2 for link of list-1
         
@@ -104,7 +105,7 @@ void * thread2(void *arg)
 	struct Node* y = NULL;
      while (1)
     {
-				pthread_cond_wait(&filled1, &mutex2); // if thread 1 hasn’t added something to list-1, wait
+				pthread_cond_wait(&filled1, &mutex2); // if thread 1 hasn't added something to list-1, wait
 				pthread_mutex_lock(&mutex2); 					// lock mutex2 for unlink of list-1
 				Unlink(list1, x);
 				pthread_mutex_unlock(&mutex2); 				// unlock mutex2 for use of list-1
@@ -114,6 +115,8 @@ void * thread2(void *arg)
 				
 				pthread_cond_signal(&openFree); 				// add open space to freeList
 				// x to produce in y
+        y->data = y->data * x->data;
+
 				pthread_mutex_lock(&mutex1); 					// lock for link of freelist
 				Link(freeList, y);
 				pthread_mutex_unlock(&mutex1); 				// unlock for use of freelist
@@ -136,12 +139,13 @@ void * thread3 (void *arg)
 
 	while(1)
 	{
-		pthread_cond_wait(&filled2, &mutex3); // if thread 2 hasn’t added something to list-2, wait
+		pthread_cond_wait(&filled2, &mutex3); // if thread 2 hasn't added something to list-2, wait
 		pthread_mutex_lock(&mutex3); 					// lock for unlink of list-2
 		Unlink(list2, c);
 		pthread_mutex_unlock(&mutex3); 				// unlock for use of list-2
 		
 		//consume info c
+    c ->data = 0;
 		pthread_mutex_lock(&mutex1); 					// lock for link of freelist
 		Link(freeList, c);
 		pthread_mutex_unlock(&mutex1); 				// unlock for use of freelist
