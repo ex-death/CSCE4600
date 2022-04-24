@@ -110,8 +110,7 @@ void readFile(string file, vector<int>& resourceTotal, map<int, vector<int>>& pr
   }
 }
 
-/*Function used to determine available resources*/
-vector<int> available(vector<int> const& totalRcrs, vector<vector<int>> const& rcrsAlloc)
+vector<int> available(vector<int> const& totalRcrs, vector<vector<int>> const& rcrsAlloc) // function checks available resources
 {
     
     vector<int> result; // holds results
@@ -129,11 +128,11 @@ vector<int> available(vector<int> const& totalRcrs, vector<vector<int>> const& r
     return result;
 }
 
-/*Function used to reduce resources*/
-void reduce(vector<int>& availRcrs, map<int, vector<int>>& procRqsts, vector<vector<int>>& rcrsAlloc)
+void reduce(vector<int>& availRcrs, map<int, vector<int>>& procRqsts, vector<vector<int>>& rcrsAlloc) // function that reduces processes if they are able to reduce
 {
-    // not reduced 
-    while (!procRqsts.empty()) {
+     
+    while (!procRqsts.empty()) // not reduced
+    {
         // flag to determine if contains deadlock
         bool flg = false;
         for (auto processIterator = procRqsts.begin(); processIterator != procRqsts.end(); ++processIterator)
@@ -184,6 +183,12 @@ void reduce(vector<int>& availRcrs, map<int, vector<int>>& procRqsts, vector<vec
         }
     }
 }
+bool determineDeadlockState(vector<int> &availRcrs,map<int, vector<int>>& procRqsts, vector<vector<int>>& rcrsAlloc)
+{
+  reduce(availRcrs, procRqsts, rcrsAlloc);
+  
+  return !procRqsts.empty();
+}
 
 int main(int numArgs, char* argLst[]) {
 
@@ -202,26 +207,16 @@ int main(int numArgs, char* argLst[]) {
 
     readFile(file, totalRcrs, procRqsts, rcrsAlloc);
 
-    return 0;
+    availRcrs = available(totalRcrs, rcrsAlloc);
 
-}
-
-int main(int numArgs, char* argLst[]){
-    if (numArgs != 2)
+    if(determineDeadlockState(availRcrs, procRqsts, rcrsAlloc))
     {
-        cout << "How to run: ./a.out <filename> " << endl;
-        cout << "<filename> is file where matrix is stored" << endl;
-        return 1;
+        cout << "There is a Deadlock in this system." << endl;
     }
-
-  string file = argLst[1];
-
-  vector<int> totalRcrs, availRcrs;
-  vector<vector<int>> rcrsAlloc;
-  map<int, vector<int>> procRqsts;
-
-  readFile(file, totalRcrs, procRqsts, rcrsAlloc);
-
-  return 0;
+    else
+    {
+        cout << "No Deadlock has occured." << endl; 
+    }
+    return 0;
 
 }
