@@ -48,7 +48,8 @@ void readFile(string file, vector<int>& resourceTotal, map<int, vector<int>>& pr
     {
         position = 0;
       
-        while(position < line.length()){
+        while(position < line.length())
+        {
         commaPos = line.find(",", position);
         if(commaPos == string::npos) commaPos = line.length();
         numLen = commaPos - position;
@@ -57,12 +58,11 @@ void readFile(string file, vector<int>& resourceTotal, map<int, vector<int>>& pr
         resourceTotal.push_back(stoi(stringNum));
 
         position = commaPos + 1;
-      }
+       }
 
       continue;
     } //end if resourceTotal.empty()
     
-    //if here, must be at matrix
     if(procRqsts.size() < processCount) //then this line represents a process
     { 
       vector<int> newProc;
@@ -88,7 +88,6 @@ void readFile(string file, vector<int>& resourceTotal, map<int, vector<int>>& pr
       continue;
     } //if procRqsts.size() < numProcs
 
-    //if here, then the current line MUST represent a resource
     vector<int> newRcrs;
     int procIndex = 0;
 
@@ -106,26 +105,26 @@ void readFile(string file, vector<int>& resourceTotal, map<int, vector<int>>& pr
       ++procIndex;
     }
 
-    rcrsAlloc.push_back(newRcrs);//add row
+    rcrsAlloc.push_back(newRcrs); //add row
 
   }
 }
 
 vector<int> available(vector<int> const& totalRcrs, vector<vector<int>> const& rcrsAlloc)
 {
-    // vector used to hold results
-    vector<int> result;
+    
+    vector<int> result; // holds results
     for (int rowNum = 0; rowNum < rcrsAlloc.size(); ++rowNum)
     {
         int total = 0;
         for (int colNum = 0; colNum < rcrsAlloc[0].size(); ++colNum)
-        {   // calculate total
-            total += rcrsAlloc[rowNum][colNum];
+        {   
+            total += rcrsAlloc[rowNum][colNum]; // calculate total
         }
-        // add back into result vector
-        result.push_back(totalRcrs[rowNum] - total);
+        
+        result.push_back(totalRcrs[rowNum] - total); // add back
     }
-    // used in other functions
+    
     return result;
 }
 
