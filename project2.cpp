@@ -6,6 +6,9 @@
 #include <string>
 using namespace std;
 
+// Bret Hogan, Michael Bertucci, Brandon Whitney  
+// Program used to look for deadlocks within a given matrix file
+
 void readFile(string file, vector<int>& resourceTotal, map<int, vector<int>>& procRqsts, vector<vector<int>>& rcrsAlloc)
 {
   ifstream fin(file);
@@ -108,7 +111,6 @@ void readFile(string file, vector<int>& resourceTotal, map<int, vector<int>>& pr
   }
 }
 
-/*Function used to determine the number of available resources*/
 vector<int> available(vector<int> const& totalRcrs, vector<vector<int>> const& rcrsAlloc)
 {
     // vector used to hold results
