@@ -108,6 +108,25 @@ void readFile(string file, vector<int>& resourceTotal, map<int, vector<int>>& pr
   }
 }
 
+/*Function used to determine the number of available resources*/
+vector<int> available(vector<int> const& totalRcrs, vector<vector<int>> const& rcrsAlloc)
+{
+    // vector used to hold results
+    vector<int> result;
+    for (int rowNum = 0; rowNum < rcrsAlloc.size(); ++rowNum)
+    {
+        int total = 0;
+        for (int colNum = 0; colNum < rcrsAlloc[0].size(); ++colNum)
+        {   // calculate total
+            total += rcrsAlloc[rowNum][colNum];
+        }
+        // add back into result vector
+        result.push_back(totalRcrs[rowNum] - total);
+    }
+    // used in other functions
+    return result;
+}
+
 int main(int numArgs, char* argLst[]){
   
     if (numArgs != 2)
@@ -129,21 +148,3 @@ int main(int numArgs, char* argLst[]){
 
 }
 
-/*Function used to determine the number of available resources*/
-vector<int> available(vector<int> const& totalRcrs, vector<vector<int>> const& rcrsAlloc)
-{   
-    // vector used to hold results
-    vector<int> result;
-    for (int rowNum =0; rowNum < rcrsAlloc.size(); ++rowNum) 
-    {   
-        int total =0;
-        for (int colNum = 0; colNum < rcrsAlloc[0].size(); ++colNum) 
-        {   // calculate total
-            total += rcrsAlloc[rowNum][colNum];
-        }
-        // add back into result vector
-        result.push_back(totalRcrs[rowNum] - total);
-    }
-    // used in other functions
-    return result;
-}
