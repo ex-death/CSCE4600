@@ -128,3 +128,22 @@ int main(int numArgs, char* argLst[]){
   return 0;
 
 }
+
+/*Function used to determine the number of available resources*/
+vector<int> available(vector<int> const& totalRcrs, vector<vector<int>> const& rcrsAlloc)
+{   
+    // vector used to hold results
+    vector<int> result;
+    for (int rowNum =0; rowNum < rcrsAlloc.size(); ++rowNum) 
+    {   
+        int total =0;
+        for (int colNum = 0; colNum < rcrsAlloc[0].size(); ++colNum) 
+        {   // calculate total
+            total += rcrsAlloc[rowNum][colNum];
+        }
+        // add back into result vector
+        result.push_back(totalRcrs[rowNum] - total);
+    }
+    // used in other functions
+    return result;
+}
