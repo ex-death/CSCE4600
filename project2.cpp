@@ -108,27 +108,6 @@ void readFile(string file, vector<int>& resourceTotal, map<int, vector<int>>& pr
   }
 }
 
-int main(int numArgs, char* argLst[]){
-  
-    if (numArgs != 2)
-    {
-        cout << "How to run: ./a.out <filename> " << endl;
-        cout << "<filename> is file where matrix is stored" << endl;
-        return 1;
-    }
-
-  string file = argLst[1];
-
-  vector<int> totalRcrs, availRcrs;
-  vector<vector<int>> rcrsAlloc;
-  map<int, vector<int>> procRqsts;
-
-  readFile(file, totalRcrs, procRqsts, rcrsAlloc);
-
-  return 0;
-
-}
-
 /*Function used to determine the number of available resources*/
 vector<int> available(vector<int> const& totalRcrs, vector<vector<int>> const& rcrsAlloc)
 {   
@@ -146,4 +125,24 @@ vector<int> available(vector<int> const& totalRcrs, vector<vector<int>> const& r
     }
     // used in other functions
     return result;
+}
+
+int main(int numArgs, char* argLst[]){
+if (numArgs != 2)
+    {
+        cout << "How to run: ./a.out <filename> " << endl;
+        cout << "<filename> is file where matrix is stored" << endl;
+        return 1;
+    }
+
+  string file = argLst[1];
+
+  vector<int> totalRcrs, availRcrs;
+  vector<vector<int>> rcrsAlloc;
+  map<int, vector<int>> procRqsts;
+
+  readFile(file, totalRcrs, procRqsts, rcrsAlloc);
+
+  return 0;
+
 }
