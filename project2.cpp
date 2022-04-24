@@ -128,7 +128,7 @@ vector<int> available(vector<int> const& totalRcrs, vector<vector<int>> const& r
 }
 
 int main(int numArgs, char* argLst[]){
-if (numArgs != 2)
+    if (numArgs != 2)
     {
         cout << "How to run: ./a.out <filename> " << endl;
         cout << "<filename> is file where matrix is stored" << endl;
