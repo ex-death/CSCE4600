@@ -110,6 +110,12 @@ void readFile(string file, vector<int>& resourceTotal, map<int, vector<int>>& pr
 
 int main(int numArgs, char* argLst[]){
   
+    if (numArgs != 2)
+    {
+        cout << "How to run: ./a.out <filename> " << endl;
+        cout << "<filename> is file where matrix is stored" << endl;
+        return 1;
+    }
 
   string file = argLst[1];
 
@@ -118,5 +124,7 @@ int main(int numArgs, char* argLst[]){
   map<int, vector<int>> procRqsts;
 
   readFile(file, totalRcrs, procRqsts, rcrsAlloc);
-  
+
+  return 0;
+
 }
