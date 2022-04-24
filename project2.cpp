@@ -61,7 +61,7 @@ void readFile(string file, vector<int>& resourceTotal, map<int, vector<int>>& pr
        }
 
       continue;
-    } //end if resourceTotal.empty()
+    }
     
     if(procRqsts.size() < processCount) //then this line represents a process
     { 
