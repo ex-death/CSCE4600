@@ -110,6 +110,7 @@ void readFile(string file, vector<int>& resourceTotal, map<int, vector<int>>& pr
   }
 }
 
+/*Function used to determine available resources*/
 vector<int> available(vector<int> const& totalRcrs, vector<vector<int>> const& rcrsAlloc)
 {
     
@@ -126,6 +127,83 @@ vector<int> available(vector<int> const& totalRcrs, vector<vector<int>> const& r
     }
     
     return result;
+}
+
+/*Function used to reduce resources*/
+void reduce(vector<int>& availRcrs, map<int, vector<int>>& procRqsts, vector<vector<int>>& rcrsAlloc)
+{
+    // not reduced 
+    while (!procRqsts.empty()) {
+        // flag to determine if contains deadlock
+        bool flg = false;
+        for (auto processIterator = procRqsts.begin(); processIterator != procRqsts.end(); ++processIterator)
+        {
+            vector<int> process = (*processIterator).second;
+
+            // create processes number and rescource number
+            int processNumber = (*processIterator).first;
+            int rescourceNumber;
+
+            // iterate through rescouces
+            for (rescourceNumber = 0; rescourceNumber < process.size(); ++rescourceNumber)
+            {
+                if (process[rescourceNumber] > availRcrs[rescourceNumber])
+                {
+                    break;
+                }
+            }
+
+            // if process can not go on, then continue
+            if (rescourceNumber != process.size())
+            {
+                // move to next process
+                continue;
+            }
+
+            // loop and update avaiable rescources 
+            for (int rescourceNumber = 0; rescourceNumber < rcrsAlloc.size(); ++rescourceNumber)
+            {
+                // create rescource vector to hold info
+                vector<int> rescourcesVect = rcrsAlloc[rescourceNumber];
+                availRcrs[rescourceNumber] += rescourcesVect[processNumber];
+                rescourcesVect[processNumber] = 0;
+            }
+            // remove process
+            procRqsts.erase(processIterator);
+            // set flg to true
+            flg = true;
+
+            // go to next step in process 
+            break;
+        }
+
+        if (!flg)
+        {
+            //deadlock has occured
+            return;
+        }
+    }
+}
+
+int main(int numArgs, char* argLst[]) {
+
+    if (numArgs != 2)
+    {
+        cout << "How to run: ./a.out <filename> " << endl;
+        cout << "<filename> is file where matrix is stored" << endl;
+        return 1;
+    }
+
+    string file = argLst[1];
+
+    vector<int> totalRcrs, availRcrs;
+    vector<vector<int>> rcrsAlloc;
+    map<int, vector<int>> procRqsts;
+
+    readFile(file, totalRcrs, procRqsts, rcrsAlloc);
+
+    return 0;
+
 }
 
 int main(int numArgs, char* argLst[]){
