@@ -128,7 +128,7 @@ vector<int> available(vector<int> const& totalRcrs, vector<vector<int>> const& r
     return result;
 }
 
-void reduce(vector<int>& availRcrs, map<int, vector<int>>& procRqsts, vector<vector<int>>& rcrsAlloc, bool *deadlock) // function that reduces processes if they are able to reduce
+void reduce(vector<int>& availRcrs, map<int, vector<int>>& procRqsts, vector<vector<int>>& rcrsAlloc) // function that reduces processes if they are able to reduce
 {
      
     while (!procRqsts.empty()) // not reduced
@@ -179,14 +179,13 @@ void reduce(vector<int>& availRcrs, map<int, vector<int>>& procRqsts, vector<vec
         if (!flg)
         {
             //deadlock has occured
-            *deadlock = true;
             return;
         }
     }
 }
 bool determineDeadlockState(vector<int> &availRcrs,map<int, vector<int>>& procRqsts, vector<vector<int>>& rcrsAlloc)
 {
-  //reduce(availRcrs, procRqsts, rcrsAlloc);
+  reduce(availRcrs, procRqsts, rcrsAlloc);
   
   return !procRqsts.empty();
 }
@@ -205,17 +204,12 @@ int main(int numArgs, char* argLst[]) {
     vector<int> totalRcrs, availRcrs;
     vector<vector<int>> rcrsAlloc;
     map<int, vector<int>> procRqsts;
-    bool *deadlock;
-
-    *deadlock = false;
 
     readFile(file, totalRcrs, procRqsts, rcrsAlloc);
 
     availRcrs = available(totalRcrs, rcrsAlloc);
 
-    reduce(availRcrs, procRqsts, rcrsAlloc, deadlock);
-
-    if(deadlock)
+    if(determineDeadlockState(availRcrs, procRqsts, rcrsAlloc))
     {
         cout << endl << "There is a Deadlock in this system." << endl;
     }
