@@ -9,7 +9,7 @@ using namespace std;
 // Bret Hogan, Michael Bertucci, Brandon Whitney  
 // Program used to look for deadlocks within a given matrix file
 
-void readFile(string file, vector<int>& resourceTotal, map<int, vector<int>>& procRqsts, vector<vector<int>>& rcrsAlloc)
+void readFile(string file, vector<int>& rTotalCount, map<int, vector<int>>& pReq, vector<vector<int>>& rAlloc)
 {
   ifstream fin(file);
 
@@ -44,7 +44,7 @@ void readFile(string file, vector<int>& resourceTotal, map<int, vector<int>>& pr
       continue;
     }
 
-    if(resourceTotal.empty())
+    if(rTotalCount.empty())
     {
         position = 0;
       
@@ -55,7 +55,7 @@ void readFile(string file, vector<int>& resourceTotal, map<int, vector<int>>& pr
         numLen = commaPos - position;
 
         stringNum = line.substr(position, numLen);
-        resourceTotal.push_back(stoi(stringNum));
+        rTotalCount.push_back(stoi(stringNum));
 
         position = commaPos + 1;
        }
@@ -63,9 +63,9 @@ void readFile(string file, vector<int>& resourceTotal, map<int, vector<int>>& pr
       continue;
     }
     
-    if(procRqsts.size() < processCount) //then this line represents a process
+    if(pReq.size() < processCount) //then this line represents a process
     { 
-      vector<int> newProc;
+      vector<int> pNew;
       int resourceIndex = resourceCount;
 
       numEndPos = line.length()-1;
@@ -77,98 +77,98 @@ void readFile(string file, vector<int>& resourceTotal, map<int, vector<int>>& pr
 
         stringNum = line.substr(commaPos + 1, numLen);
 
-        newProc.insert(newProc.begin(), stoi(stringNum));//push_front
+        pNew.insert(pNew.begin(), stoi(stringNum));//push_front
 
         numEndPos = commaPos - 1;
         --resourceIndex;
       }
 
-      procRqsts.emplace(procRqsts.size(), newProc); //add row
+      pReq.emplace(pReq.size(), pNew); //add row
 
       continue;
-    } //if procRqsts.size() < numProcs
+    } //if pReq.size() < numProcs
 
-    vector<int> newRcrs;
-    int procIndex = 0;
+    vector<int> rNew;
+    int pIndex = 0;
 
     position = 0;
     
-    while(procIndex != processCount){
+    while(pIndex != processCount){
       commaPos = line.find(",", position);
       numLen = commaPos - position;
 
       stringNum = line.substr(position, numLen);
       
-      newRcrs.push_back(stoi(stringNum));
+      rNew.push_back(stoi(stringNum));
 
       position = commaPos + 1;
-      ++procIndex;
+      ++pIndex;
     }
 
-    rcrsAlloc.push_back(newRcrs); //add row
+    rAlloc.push_back(rNew); //add row
 
   }
 }
 
-vector<int> available(vector<int> const& totalRcrs, vector<vector<int>> const& rcrsAlloc) // function checks available resources
+vector<int> available(vector<int> const& rTotal, vector<vector<int>> const& rAlloc) // function checks available resources
 {
     
     vector<int> result; // holds results
-    for (int rowNum = 0; rowNum < rcrsAlloc.size(); ++rowNum)
+    for (int rowNum = 0; rowNum < rAlloc.size(); ++rowNum)
     {
         int total = 0;
-        for (int colNum = 0; colNum < rcrsAlloc[0].size(); ++colNum)
+        for (int colNum = 0; colNum < rAlloc[0].size(); ++colNum)
         {   
-            total += rcrsAlloc[rowNum][colNum]; // calculate total
+            total += rAlloc[rowNum][colNum]; // calculate total
         }
         
-        result.push_back(totalRcrs[rowNum] - total); // add back
+        result.push_back(rTotal[rowNum] - total); // add back
     }
     
     return result;
 }
 
-void reduce(vector<int>& availRcrs, map<int, vector<int>>& procRqsts, vector<vector<int>>& rcrsAlloc) // function that reduces processes if they are able to reduce
+void reduce(vector<int>& rFree, map<int, vector<int>>& pReq, vector<vector<int>>& rAlloc) // function that reduces processes if they are able to reduce
 {
      
-    while (!procRqsts.empty()) // not reduced
+    while (!pReq.empty()) // not reduced
     {
         // flag to determine if contains deadlock
         bool flg = false;
-        for (auto processIterator = procRqsts.begin(); processIterator != procRqsts.end(); ++processIterator)
+        for (auto iProc = pReq.begin(); iProc != pReq.end(); ++iProc)
         {
-            vector<int> process = (*processIterator).second;
+            vector<int> process = (*iProc).second;
 
-            // create processes number and rescource number
-            int processNumber = (*processIterator).first;
-            int rescourceNumber;
+            // create processes number and resource number
+            int pNum = (*iProc).first;
+            int rNum;
 
             // iterate through rescouces
-            for (rescourceNumber = 0; rescourceNumber < process.size(); ++rescourceNumber)
+            for (rNum = 0; rNum < process.size(); ++rNum)
             {
-                if (process[rescourceNumber] > availRcrs[rescourceNumber])
+                if (process[rNum] > rFree[rNum])
                 {
                     break;
                 }
             }
 
             // if process can not go on, then continue
-            if (rescourceNumber != process.size())
+            if (rNum != process.size())
             {
                 // move to next process
                 continue;
             }
 
-            // loop and update avaiable rescources 
-            for (int rescourceNumber = 0; rescourceNumber < rcrsAlloc.size(); ++rescourceNumber)
+            // loop and update avaiable resources 
+            for (int rNum = 0; rNum < rAlloc.size(); ++rNum)
             {
-                // create rescource vector to hold info
-                vector<int> rescourcesVect = rcrsAlloc[rescourceNumber];
-                availRcrs[rescourceNumber] += rescourcesVect[processNumber];
-                rescourcesVect[processNumber] = 0;
+                // create resource vector to hold info
+                vector<int> rVector = rAlloc[rNum];
+                rFree[rNum] += rVector[pNum];
+                rVector[pNum] = 0;
             }
             // remove process
-            procRqsts.erase(processIterator);
+            pReq.erase(iProc);
             // set flg to true
             flg = true;
 
@@ -183,33 +183,33 @@ void reduce(vector<int>& availRcrs, map<int, vector<int>>& procRqsts, vector<vec
         }
     }
 }
-bool determineDeadlockState(vector<int> &availRcrs,map<int, vector<int>>& procRqsts, vector<vector<int>>& rcrsAlloc)
+bool determineDeadlockState(vector<int> &rFree,map<int, vector<int>>& pReq, vector<vector<int>>& rAlloc)
 {
-  reduce(availRcrs, procRqsts, rcrsAlloc);
+  reduce(rFree, pReq, rAlloc);
   
-  return !procRqsts.empty();
+  return !pReq.empty();
 }
 
-int main(int numArgs, char* argLst[]) {
+int main(int argc, char* argv[]) {
 
-    if (numArgs != 2)
+    if (argc != 2)
     {
         cout << "How to run: ./a.out <filename> " << endl;
         cout << "<filename> is file where matrix is stored" << endl;
         return 1;
     }
 
-    string file = argLst[1];
+    string file = argv[1];
 
-    vector<int> totalRcrs, availRcrs;
-    vector<vector<int>> rcrsAlloc;
-    map<int, vector<int>> procRqsts;
+    vector<int> rTotal, rFree;
+    vector<vector<int>> rAlloc;
+    map<int, vector<int>> pReq;
 
-    readFile(file, totalRcrs, procRqsts, rcrsAlloc);
+    readFile(file, rTotal, pReq, rAlloc);
 
-    availRcrs = available(totalRcrs, rcrsAlloc);
+    rFree = available(rTotal, rAlloc);
 
-    if(determineDeadlockState(availRcrs, procRqsts, rcrsAlloc))
+    if(determineDeadlockState(rFree, pReq, rAlloc))
     {
         cout << endl << "There is a Deadlock in this system." << endl;
     }
